@@ -24,13 +24,7 @@ async function applySchema(connection) {
         try {
             await connection.query(statement);
         } catch (error) {
-            if (
-                error.code === "ER_TABLE_EXISTS_ERROR" ||
-                error.code === "ER_FK_DUP_NAME" ||
-                error.errno === 1050 ||
-                error.errno === 1826 ||
-                /already exists|duplicate foreign key/i.test(error.message)
-            ) {
+            if (error.code === "ER_TABLE_EXISTS_ERROR" || error.errno === 1050) {
                 continue;
             }
             throw error;

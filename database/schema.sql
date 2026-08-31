@@ -42,5 +42,5 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
   PRIMARY KEY (id),
   UNIQUE KEY uq_refresh_token_hash (token_hash),
   KEY idx_refresh_user (user_id),
-  CONSTRAINT fk_refresh_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_refresh_tokens_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
