@@ -1,14 +1,19 @@
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const yaml = require("js-yaml");
 const swaggerUi = require("swagger-ui-express");
 
 dotenv.config();
 
 const { testConnection } = require("./config/db");
-const swaggerSpec = require("./config/swagger");
+const swaggerSpec = yaml.load(
+    fs.readFileSync(path.join(__dirname, "swagger.yaml"), "utf8")
+);
 const authRoutes = require("./routes/auth.routes");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 

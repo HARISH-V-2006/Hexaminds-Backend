@@ -1,0 +1,300 @@
+openapi: 3.0.3
+info:
+  title: Hexaminds Backend API
+  version: 1.0.0
+  description: SIH26089 Auth / OTP APIs
+servers:
+  - url: http://localhost:5000
+    description: Local server
+tags:
+  - name: Auth
+    description: Register, OTP, login, token refresh, and logout
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: Create a new user account (customer or provider)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegisterResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email or phone already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/otp/send:
+    post:
+      tags: [Auth]
+      summary: Generate and email a one-time OTP for verification/login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpSendRequest"
+      responses:
+        "200":
+          description: OTP generated and emailed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpSendResponse"
+        "404":
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: OTP requested too frequently
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/otp/verify:
+    post:
+      tags: [Auth]
+      summary: Validate the OTP and mark the account verified
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OtpVerifyRequest"
+      responses:
+        "200":
+          description: OTP verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OtpVerifyResponse"
+        "400":
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate with email and password, issue tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Account not verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Exchange a valid refresh token for a new access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RefreshResponse"
+        "401":
+          description: Invalid, expired, or revoked refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Invalidate the current refresh token / session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Session invalidated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [name, email, phone, password, role]
+      properties:
+        name:
+          type: string
+          example: Riya Sharma
+        email:
+          type: string
+          format: email
+          example: riya@example.com
+        phone:
+          type: string
+          example: "9876543210"
+        password:
+          type: string
+          format: password
+          example: StrongPass123
+        role:
+          type: string
+          enum: [customer, provider]
+          example: customer
+    RegisterResponse:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: 8f3c2a1e-4b9d-4e12-9c77-1a2b3c4d5e6f
+        message:
+          type: string
+          example: Account created. Verify OTP sent to your email
+    OtpSendRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: riya@example.com
+    OtpSendResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: OTP sent to email
+        otpExpiresAt:
+          type: string
+          format: date-time
+          example: 2026-08-31T11:20:00.000Z
+    OtpVerifyRequest:
+      type: object
+      required: [email, otp]
+      properties:
+        email:
+          type: string
+          format: email
+          example: riya@example.com
+        otp:
+          type: string
+          example: "482913"
+    OtpVerifyResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+          example: true
+        tempToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: riya@example.com
+        password:
+          type: string
+          format: password
+          example: StrongPass123
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        role:
+          type: string
+          enum: [customer, provider]
+          example: customer
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+    RefreshResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Logged out successfully
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid email or password

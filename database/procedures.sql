@@ -1,5 +1,3 @@
-USE hexaminds;
-
 DROP PROCEDURE IF EXISTS sp_register_user;
 DROP PROCEDURE IF EXISTS sp_get_user_by_email;
 DROP PROCEDURE IF EXISTS sp_save_otp;
@@ -11,12 +9,12 @@ DROP PROCEDURE IF EXISTS sp_revoke_refresh_token;
 DELIMITER $$
 
 CREATE PROCEDURE sp_register_user(
-  IN p_id CHAR(36),
-  IN p_name VARCHAR(100),
-  IN p_email VARCHAR(150),
-  IN p_phone VARCHAR(20),
-  IN p_password_hash VARCHAR(255),
-  IN p_role VARCHAR(20)
+  IN p_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_name VARCHAR(100) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_email VARCHAR(150) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_phone VARCHAR(20) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_password_hash VARCHAR(255) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_role VARCHAR(20) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
   DECLARE v_email_exists INT DEFAULT 0;
@@ -42,7 +40,7 @@ BEGIN
 END$$
 
 CREATE PROCEDURE sp_get_user_by_email(
-  IN p_email VARCHAR(150)
+  IN p_email VARCHAR(150) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
   SELECT
@@ -60,13 +58,13 @@ BEGIN
 END$$
 
 CREATE PROCEDURE sp_save_otp(
-  IN p_id CHAR(36),
-  IN p_email VARCHAR(150),
-  IN p_otp_hash CHAR(64),
+  IN p_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_email VARCHAR(150) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_otp_hash CHAR(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
   IN p_expires_at DATETIME
 )
 BEGIN
-  DECLARE v_user_id CHAR(36);
+  DECLARE v_user_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
   DECLARE v_last_created DATETIME;
 
   SET v_user_id = (SELECT id FROM users WHERE email = p_email LIMIT 1);
@@ -98,13 +96,13 @@ BEGIN
 END$$
 
 CREATE PROCEDURE sp_verify_otp(
-  IN p_email VARCHAR(150),
-  IN p_otp_hash CHAR(64)
+  IN p_email VARCHAR(150) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_otp_hash CHAR(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
-  DECLARE v_otp_id CHAR(36);
-  DECLARE v_user_id CHAR(36);
-  DECLARE v_role VARCHAR(20);
+  DECLARE v_otp_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  DECLARE v_user_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+  DECLARE v_role VARCHAR(20) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
   SET v_otp_id = (
     SELECT id
@@ -131,9 +129,9 @@ BEGIN
 END$$
 
 CREATE PROCEDURE sp_save_refresh_token(
-  IN p_id CHAR(36),
-  IN p_user_id CHAR(36),
-  IN p_token_hash CHAR(64),
+  IN p_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_user_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  IN p_token_hash CHAR(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci,
   IN p_expires_at DATETIME
 )
 BEGIN
@@ -144,7 +142,7 @@ BEGIN
 END$$
 
 CREATE PROCEDURE sp_get_refresh_token(
-  IN p_token_hash CHAR(64)
+  IN p_token_hash CHAR(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
   SELECT
@@ -164,10 +162,10 @@ BEGIN
 END$$
 
 CREATE PROCEDURE sp_revoke_refresh_token(
-  IN p_token_hash CHAR(64)
+  IN p_token_hash CHAR(64) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci
 )
 BEGIN
-  DECLARE v_id CHAR(36);
+  DECLARE v_id CHAR(36) CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
   DECLARE v_revoked TINYINT(1);
 
   SET v_id = (
@@ -194,4 +192,3 @@ BEGIN
 END$$
 
 DELIMITER ;
-    

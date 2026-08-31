@@ -1,13 +1,22 @@
 const nodemailer = require("nodemailer");
+const AppError = require("./appError");
 
 let transporter;
+
+function smtpCredentials() {
+    const user = (process.env.SMTP_USER || "").trim();
+    const pass = (process.env.SMTP_PASS || "").replace(/\s+/g, "");
+    return { user, pass };
+}
 
 function getTransporter() {
     if (transporter) {
         return transporter;
     }
 
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+    const { user, pass } = smtpCredentials();
+
+    if (!user || !pass) {
         return null;
     }
 
@@ -15,13 +24,21 @@ function getTransporter() {
         host: process.env.SMTP_HOST || "smtp.gmail.com",
         port: Number(process.env.SMTP_PORT) || 587,
         secure: Number(process.env.SMTP_PORT) === 465,
-        auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS
-        }
+        auth: { user, pass }
     });
 
     return transporter;
+}
+
+function fromAddress() {
+    const { user } = smtpCredentials();
+    const configured = (process.env.SMTP_FROM || "").trim();
+
+    if (configured && !configured.includes("hexaminds.local") && !configured.includes("noreply@")) {
+        return configured;
+    }
+
+    return `"Hexaminds" <${user}>`;
 }
 
 async function sendOtpEmail(email, otp, expiresAt) {
@@ -40,19 +57,25 @@ async function sendOtpEmail(email, otp, expiresAt) {
 
     if (!mailer) {
         if (process.env.NODE_ENV === "production") {
-            throw new Error("SMTP is not configured");
+            throw new AppError("SMTP is not configured", 500);
         }
         console.log(`[DEV OTP] ${email}: ${otp} (expires ${expiresAt.toISOString()})`);
         return;
     }
 
-    await mailer.sendMail({
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: email,
-        subject,
-        text,
-        html
-    });
+    try {
+        const info = await mailer.sendMail({
+            from: fromAddress(),
+            to: email,
+            subject,
+            text,
+            html
+        });
+        console.log(`OTP email sent to ${email} (${info.messageId})`);
+    } catch (error) {
+        console.error("OTP email failed:", error.message);
+        throw new AppError("Unable to send OTP email. Check SMTP settings", 502);
+    }
 }
 
 module.exports = { sendOtpEmail };

@@ -18,7 +18,8 @@ npm install
 npm run dev
 ```
 
-Swagger UI: `http://localhost:5000/api-docs`
+Swagger UI: `http://localhost:5000/api-docs`  
+OpenAPI spec: `swagger.yaml`
 
 ## Auth / OTP
 
