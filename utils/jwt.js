@@ -22,6 +22,10 @@ function verifyRefreshToken(token) {
     return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 }
 
+function verifyAccessToken(token) {
+    return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+}
+
 function getRefreshExpiryDate() {
     const expiresIn = process.env.JWT_REFRESH_EXPIRES || "7d";
     const now = Date.now();
@@ -45,5 +49,6 @@ module.exports = {
     signRefreshToken,
     signTempToken,
     verifyRefreshToken,
+    verifyAccessToken,
     getRefreshExpiryDate
 };

@@ -1,4 +1,3 @@
-const { v4: uuidv4 } = require("uuid");
 const AppError = require("../utils/appError");
 const { callProcedure } = require("../utils/procedure");
 const { sendOtpEmail } = require("../utils/mailer");
@@ -17,9 +16,8 @@ const {
     getRefreshExpiryDate
 } = require("../utils/jwt");
 
-function otpExpiryDate() {
-    const minutes = Number(process.env.OTP_EXPIRES_MINUTES) || 10;
-    return new Date(Date.now() + minutes * 60 * 1000);
+function otpTtlMinutes() {
+    return Number(process.env.OTP_EXPIRES_MINUTES) || 10;
 }
 
 function tokenPayload(user) {
@@ -31,11 +29,9 @@ function tokenPayload(user) {
 }
 
 async function register({ name, email, phone, password, role }) {
-    const userId = uuidv4();
     const passwordHash = await hashPassword(password);
 
     const result = await callProcedure("sp_register_user", [
-        userId,
         name,
         email,
         phone,
@@ -61,13 +57,11 @@ async function sendOtp({ email }) {
     }
 
     const otp = generateOtp();
-    const expiresAt = otpExpiryDate();
 
-    const result = await callProcedure("sp_save_otp", [
-        uuidv4(),
+    const result = await callProcedure("sp_create_otp", [
         email,
         hashOtp(otp),
-        expiresAt
+        otpTtlMinutes()
     ]);
 
     if (!result || !result.success) {
@@ -75,7 +69,7 @@ async function sendOtp({ email }) {
         throw new AppError(result?.message || "Unable to send OTP", status);
     }
 
-    await sendOtpEmail(email, otp, expiresAt);
+    await sendOtpEmail(email, otp, result.otpExpiresAt);
 
     return {
         message: result.message,
@@ -116,7 +110,7 @@ async function login({ email, password }) {
         throw new AppError("Invalid email or password", 401);
     }
 
-    if (!user.is_verified) {
+    if (!user.is_email_verified) {
         throw new AppError("Account is not verified. Please verify OTP first", 403);
     }
 
@@ -124,8 +118,7 @@ async function login({ email, password }) {
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
 
-    const saved = await callProcedure("sp_save_refresh_token", [
-        uuidv4(),
+    const saved = await callProcedure("sp_store_refresh_token", [
         user.id,
         hashToken(refreshToken),
         getRefreshExpiryDate()
@@ -157,7 +150,7 @@ async function refresh({ refreshToken }) {
         throw new AppError("Invalid refresh token", 401);
     }
 
-    if (session.is_revoked) {
+    if (session.revoked) {
         throw new AppError("Refresh token has been revoked", 401);
     }
 

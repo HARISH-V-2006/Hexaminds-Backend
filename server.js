@@ -18,6 +18,7 @@ const authRoutes = require("./routes/auth.routes");
 const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 
 const app = express();
+const usersRoutes = require("./routes/users.routes");
 
 app.use(cors());
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -34,6 +35,7 @@ app.get("/", (req, res) => {
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

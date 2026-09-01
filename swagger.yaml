@@ -9,6 +9,10 @@ servers:
 tags:
   - name: Auth
     description: Register, OTP, login, token refresh, and logout
+  - name: Users
+    description: View and manage user profiles (JWT protected)
+  - name: Users
+    description: View and manage user profiles (JWT protected)
 paths:
   /api/auth/register:
     post:
@@ -172,6 +176,155 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/users/me:
+    get:
+      tags: [Users]
+      summary: Fetch the logged-in user's own profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Users]
+      summary: Update the logged-in user's own profile fields
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatedResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No changes made or user not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/users/{id}:
+    get:
+      tags: [Users]
+      summary: Admin lookup of any user by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 3
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/users/{id}/role:
+    patch:
+      tags: [Users]
+      summary: Admin changes a user's role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleRequest"
+      responses:
+        "200":
+          description: Role updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatedResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -298,3 +451,59 @@ components:
         message:
           type: string
           example: Invalid email or password
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: Riya Sharma
+        email:
+          type: string
+          format: email
+          example: riya@example.com
+        phone:
+          type: string
+          example: "9876543210"
+        role:
+          type: string
+          enum: [customer, provider, admin]
+          example: customer
+        address:
+          type: string
+          nullable: true
+          example: 12 Anna Salai, Chennai
+        is_email_verified:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: Riya Sharma
+        phone:
+          type: string
+          example: "9876543210"
+        address:
+          type: string
+          example: 12 Anna Salai, Chennai
+    UpdateRoleRequest:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [customer, provider, admin]
+          example: provider
+    UpdatedResponse:
+      type: object
+      properties:
+        updated:
+          type: boolean
+          example: true
