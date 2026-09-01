@@ -11,8 +11,8 @@ tags:
     description: Register, OTP, login, token refresh, and logout
   - name: Users
     description: View and manage user profiles (JWT protected)
-  - name: Users
-    description: View and manage user profiles (JWT protected)
+  - name: Providers
+    description: Provider profiles — create, view, edit, and browse
 paths:
   /api/auth/register:
     post:
@@ -325,6 +325,154 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/providers:
+    post:
+      tags: [Providers]
+      summary: Extend the logged-in user's account into a provider profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateProviderRequest"
+      responses:
+        "201":
+          description: Provider profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateProviderResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: A provider profile already exists for this user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: [Providers]
+      summary: Browse providers with optional category/rating filters
+      parameters:
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Category id to filter by
+          example: 2
+        - name: minRating
+          in: query
+          required: false
+          schema:
+            type: number
+            format: float
+            minimum: 0
+            maximum: 5
+          example: 4
+      responses:
+        "200":
+          description: List of matching providers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProviderProfile"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/providers/{id}:
+    get:
+      tags: [Providers]
+      summary: Fetch a single provider's public profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      responses:
+        "200":
+          description: Provider profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderProfile"
+        "404":
+          description: Provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Providers]
+      summary: Provider updates their own profile / service area
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProviderRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatedResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: You can only update your own provider profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: No changes made or provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -507,3 +655,96 @@ components:
         updated:
           type: boolean
           example: true
+    CreateProviderRequest:
+      type: object
+      properties:
+        bio:
+          type: string
+          example: 5 years experience in home electrical repairs
+        latitude:
+          type: number
+          format: float
+          example: 13.0827
+        longitude:
+          type: number
+          format: float
+          example: 80.2707
+        categories:
+          type: array
+          items:
+            type: integer
+          example: [1, 3]
+    CreateProviderResponse:
+      type: object
+      properties:
+        providerId:
+          type: integer
+          example: 5
+    UpdateProviderRequest:
+      type: object
+      properties:
+        bio:
+          type: string
+          example: Updated bio text
+        latitude:
+          type: number
+          format: float
+          example: 13.0827
+        longitude:
+          type: number
+          format: float
+          example: 80.2707
+        availability:
+          type: string
+          enum: [available, busy, offline]
+          example: available
+        categories:
+          type: array
+          items:
+            type: integer
+          example: [1, 3]
+    ProviderProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        userId:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: Riya Sharma
+        bio:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+          format: float
+          nullable: true
+        longitude:
+          type: number
+          format: float
+          nullable: true
+        availability:
+          type: string
+          enum: [available, busy, offline]
+          nullable: true
+        isVerified:
+          type: boolean
+          example: false
+        ratingAvg:
+          type: number
+          format: float
+          nullable: true
+        ratingCount:
+          type: integer
+          example: 0
+        categories:
+          type: array
+          items:
+            type: string
+          example: ["Electrical", "Plumbing"]
+        createdAt:
+          type: string
+          format: date-time

@@ -16,6 +16,22 @@ function firstRow(resultSets) {
     return null;
 }
 
+function allRows(resultSets) {
+    if (!resultSets) {
+        return [];
+    }
+
+    const sets = Array.isArray(resultSets) ? resultSets : [resultSets];
+
+    for (const set of sets) {
+        if (Array.isArray(set)) {
+            return set;
+        }
+    }
+
+    return [];
+}
+
 async function callProcedure(procedureName, params = []) {
     const placeholders = params.map(() => "?").join(", ");
     const sql = placeholders
@@ -25,4 +41,13 @@ async function callProcedure(procedureName, params = []) {
     return firstRow(resultSets);
 }
 
-module.exports = { callProcedure, firstRow };
+async function callProcedureAll(procedureName, params = []) {
+    const placeholders = params.map(() => "?").join(", ");
+    const sql = placeholders
+        ? `CALL ${procedureName}(${placeholders})`
+        : `CALL ${procedureName}()`;
+    const [resultSets] = await pool.query(sql, params);
+    return allRows(resultSets);
+}
+
+module.exports = { callProcedure, callProcedureAll, firstRow, allRows };
