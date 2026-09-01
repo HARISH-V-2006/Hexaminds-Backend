@@ -20,7 +20,13 @@ const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 const app = express();
 
 app.use(cors());
-app.use(helmet({ contentSecurityPolicy: false }));
+app.use(
+    helmet({
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: { policy: "cross-origin" }
+    })
+);
 app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,7 +38,23 @@ app.get("/", (req, res) => {
     });
 });
 
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get("/swagger.yaml", (req, res) => {
+    res.type("text/yaml").send(
+        fs.readFileSync(path.join(__dirname, "swagger.yaml"), "utf8")
+    );
+});
+
+app.get("/swagger.json", (req, res) => {
+    res.json(swaggerSpec);
+});
+
+const swaggerSetup = swaggerUi.setup(swaggerSpec, {
+    explorer: true,
+    customSiteTitle: "Hexaminds API Docs"
+});
+
+app.get("/api-docs", swaggerSetup);
+app.use("/api-docs", ...swaggerUi.serve, swaggerSetup);
 app.use("/api/auth", authRoutes);
 
 app.use(notFoundHandler);
@@ -49,9 +71,14 @@ async function start() {
         process.exit(1);
     }
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, "0.0.0.0", () => {
         console.log(`Server running on port ${PORT}`);
         console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
+    });
+
+    server.on("error", (error) => {
+        console.error("Server failed to start:", error.message);
+        process.exit(1);
     });
 }
 
