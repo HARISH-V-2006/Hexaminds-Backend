@@ -21,6 +21,10 @@ const app = express();
 const usersRoutes = require("./routes/users.routes");
 const providersRoutes = require("./routes/providers.routes");
 const searchRoutes = require("./routes/search.routes");
+const verificationRoutes = require("./routes/verification.routes");
+const listingsRoutes = require("./routes/listings.routes");
+const bookingsRoutes = require("./routes/bookings.routes");
+const ratingsRoutes = require("./routes/ratings.routes");
 
 app.use(cors());
 app.use(
@@ -62,6 +66,10 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/providers", providersRoutes);
 app.use("/api/search", searchRoutes);
+app.use("/api/verification", verificationRoutes);
+app.use("/api/listings", listingsRoutes);
+app.use("/api/bookings", bookingsRoutes);
+app.use("/api/ratings", ratingsRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

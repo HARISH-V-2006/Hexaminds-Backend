@@ -15,6 +15,14 @@ tags:
     description: Provider profiles — create, view, edit, and browse
   - name: Search
     description: Radius-filtered nearby providers/listings and service categories
+  - name: Verification
+    description: Admin-only provider verification — toggle, status, and pending queue
+  - name: Listings
+    description: Provider service listings — create, view, edit, delete, and browse
+  - name: Bookings
+    description: Customer bookings against listings, and provider status updates
+  - name: Ratings
+    description: Post-completion customer ratings for providers
 paths:
   /api/auth/register:
     post:
@@ -538,6 +546,503 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/CategoriesResponse"
+  /api/verification/{providerId}/toggle:
+    post:
+      tags: [Verification]
+      summary: Admin marks a provider verified or unverified
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleVerificationRequest"
+      responses:
+        "200":
+          description: Verification status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToggleVerificationResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/verification/{providerId}/status:
+    get:
+      tags: [Verification]
+      summary: Check a provider's current verification state
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      responses:
+        "200":
+          description: Verification status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VerificationStatusResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/verification/pending:
+    get:
+      tags: [Verification]
+      summary: Admin queue of providers awaiting verification review
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Providers awaiting review
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingProvidersResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/listings:
+    post:
+      tags: [Listings]
+      summary: Provider creates a service listing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateListingRequest"
+      responses:
+        "201":
+          description: Listing created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateListingResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Caller has no provider profile yet
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: [Listings]
+      summary: Search/browse listings
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: integer
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: Matching listings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListListingsResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/listings/{id}:
+    get:
+      tags: [Listings]
+      summary: Fetch a single listing's detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Listing detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListingDetailResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [Listings]
+      summary: Provider edits their own listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateListingRequest"
+      responses:
+        "200":
+          description: Listing updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatedResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the owning provider
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [Listings]
+      summary: Provider (or admin) removes a listing
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Listing deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletedResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the owning provider or an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Listing not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/bookings:
+    post:
+      tags: [Bookings]
+      summary: Customer books a listing for a date/time slot
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "201":
+          description: Booking requested
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBookingResponse"
+        "400":
+          description: Validation error or listing unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      tags: [Bookings]
+      summary: List bookings for the logged-in customer or provider
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [REQUESTED, ACCEPTED, REJECTED, COMPLETED, CANCELLED]
+      responses:
+        "200":
+          description: Matching bookings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListBookingsResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/bookings/{id}:
+    get:
+      tags: [Bookings]
+      summary: Fetch a single booking's full detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        "200":
+          description: Booking detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDetailResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the customer or provider on this booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/bookings/{id}/status:
+    patch:
+      tags: [Bookings]
+      summary: Accept / reject / complete / cancel a booking
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookingStatusRequest"
+      responses:
+        "200":
+          description: Booking status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdatedResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the customer or provider on this booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/ratings:
+    post:
+      tags: [Ratings]
+      summary: Customer rates a completed booking
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddRatingRequest"
+      responses:
+        "201":
+          description: Rating created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddRatingResponse"
+        "400":
+          description: Validation error or booking not completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing, invalid, or expired access token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not the customer on this booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/ratings/provider/{providerId}:
+    get:
+      tags: [Ratings]
+      summary: Fetch a provider's ratings and average
+      parameters:
+        - name: providerId
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 5
+      responses:
+        "200":
+          description: Ratings and average
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderRatingsResponse"
+        "404":
+          description: Provider not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -571,8 +1076,8 @@ components:
       type: object
       properties:
         userId:
-          type: string
-          example: 8f3c2a1e-4b9d-4e12-9c77-1a2b3c4d5e6f
+          type: integer
+          example: 7
         message:
           type: string
           example: Account created. Verify OTP sent to your email
@@ -880,3 +1385,331 @@ components:
         slug:
           type: string
           example: electrician
+    ToggleVerificationRequest:
+      type: object
+      required: [verified]
+      properties:
+        verified:
+          type: boolean
+          example: true
+    ToggleVerificationResponse:
+      type: object
+      properties:
+        providerId:
+          type: integer
+          example: 5
+        verified:
+          type: boolean
+          example: true
+        verifiedAt:
+          type: string
+          format: date-time
+    VerificationStatusResponse:
+      type: object
+      properties:
+        providerId:
+          type: integer
+          example: 5
+        verified:
+          type: boolean
+          example: true
+        verifiedBy:
+          type: integer
+          nullable: true
+          example: 9
+        verifiedByName:
+          type: string
+          nullable: true
+          example: Admin One
+        verifiedAt:
+          type: string
+          format: date-time
+          nullable: true
+    PendingProvidersResponse:
+      type: object
+      properties:
+        pendingProviders:
+          type: array
+          items:
+            $ref: "#/components/schemas/PendingProvider"
+    PendingProvider:
+      type: object
+      properties:
+        providerId:
+          type: integer
+          example: 5
+        userId:
+          type: integer
+          example: 3
+        name:
+          type: string
+          example: Riya Sharma
+        email:
+          type: string
+          format: email
+          example: riya@example.com
+        bio:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+          format: float
+          nullable: true
+        longitude:
+          type: number
+          format: float
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+    CreateListingRequest:
+      type: object
+      required: [categoryId, title, price]
+      properties:
+        categoryId:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: Home wiring inspection
+        description:
+          type: string
+          example: Full house wiring safety check
+        price:
+          type: number
+          format: float
+          example: 499.00
+    CreateListingResponse:
+      type: object
+      properties:
+        listingId:
+          type: integer
+          example: 2
+    UpdateListingRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+    ListingSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        providerId:
+          type: integer
+          example: 1
+        providerName:
+          type: string
+          example: Test Provider
+        categoryId:
+          type: integer
+          example: 1
+        categoryName:
+          type: string
+          example: Electrician
+        title:
+          type: string
+          example: Home wiring inspection
+        description:
+          type: string
+          nullable: true
+        price:
+          type: number
+          format: float
+          example: 499.00
+        status:
+          type: string
+          enum: [active, inactive]
+        createdAt:
+          type: string
+          format: date-time
+    ListListingsResponse:
+      type: object
+      properties:
+        listings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ListingSummary"
+        count:
+          type: integer
+          example: 1
+    ListingDetailResponse:
+      type: object
+      properties:
+        listing:
+          type: object
+          properties:
+            id:
+              type: integer
+            categoryId:
+              type: integer
+            categoryName:
+              type: string
+            title:
+              type: string
+            description:
+              type: string
+              nullable: true
+            price:
+              type: number
+              format: float
+            status:
+              type: string
+              enum: [active, inactive]
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+        providerSummary:
+          type: object
+          properties:
+            providerId:
+              type: integer
+            userId:
+              type: integer
+            name:
+              type: string
+            isVerified:
+              type: boolean
+            ratingAvg:
+              type: number
+              format: float
+    DeletedResponse:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+          example: true
+    CreateBookingRequest:
+      type: object
+      required: [listingId, scheduledAt, address]
+      properties:
+        listingId:
+          type: integer
+          example: 1
+        scheduledAt:
+          type: string
+          format: date-time
+          example: 2026-09-10T10:00:00.000Z
+        address:
+          type: string
+          example: 12 Anna Salai, Chennai
+    CreateBookingResponse:
+      type: object
+      properties:
+        bookingId:
+          type: integer
+          example: 1
+        status:
+          type: string
+          example: REQUESTED
+    BookingSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        customerId:
+          type: integer
+          example: 3
+        providerId:
+          type: integer
+          example: 1
+        listingId:
+          type: integer
+          example: 1
+        scheduledAt:
+          type: string
+          format: date-time
+        address:
+          type: string
+        status:
+          type: string
+          enum: [REQUESTED, ACCEPTED, REJECTED, COMPLETED, CANCELLED]
+        createdAt:
+          type: string
+          format: date-time
+    ListBookingsResponse:
+      type: object
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingSummary"
+    BookingDetailResponse:
+      type: object
+      properties:
+        booking:
+          $ref: "#/components/schemas/BookingSummary"
+        status:
+          type: string
+          enum: [REQUESTED, ACCEPTED, REJECTED, COMPLETED, CANCELLED]
+        paymentStatus:
+          type: string
+          nullable: true
+    UpdateBookingStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACCEPTED, REJECTED, COMPLETED, CANCELLED]
+    AddRatingRequest:
+      type: object
+      required: [bookingId, stars]
+      properties:
+        bookingId:
+          type: integer
+          example: 1
+        stars:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          example: Great service, very punctual
+    AddRatingResponse:
+      type: object
+      properties:
+        ratingId:
+          type: integer
+          example: 1
+    RatingItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        stars:
+          type: integer
+          example: 5
+        comment:
+          type: string
+          nullable: true
+        customerName:
+          type: string
+          example: Riya Sharma
+        createdAt:
+          type: string
+          format: date-time
+    ProviderRatingsResponse:
+      type: object
+      properties:
+        ratings:
+          type: array
+          items:
+            $ref: "#/components/schemas/RatingItem"
+        average:
+          type: number
+          format: float
+          nullable: true
+          example: 4.5
