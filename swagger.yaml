@@ -13,6 +13,8 @@ tags:
     description: View and manage user profiles (JWT protected)
   - name: Providers
     description: Provider profiles — create, view, edit, and browse
+  - name: Search
+    description: Radius-filtered nearby providers/listings and service categories
 paths:
   /api/auth/register:
     post:
@@ -473,6 +475,69 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  /api/search/nearby:
+    get:
+      tags: [Search]
+      summary: Radius-filtered provider/listing search around a point
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: -90
+            maximum: 90
+          example: 13.0827
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: -180
+            maximum: 180
+          example: 80.2707
+        - name: radiusKm
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: 0.1
+            maximum: 500
+          example: 5
+        - name: category
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Category id to filter listings by
+          example: 1
+      responses:
+        "200":
+          description: Nearby listings ordered by distance
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearbySearchResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/search/categories:
+    get:
+      tags: [Search]
+      summary: Fixed list of service categories for the filter UI
+      responses:
+        "200":
+          description: Service categories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoriesResponse"
 components:
   securitySchemes:
     bearerAuth:
@@ -748,3 +813,70 @@ components:
         createdAt:
           type: string
           format: date-time
+    NearbySearchResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/NearbySearchResult"
+    NearbySearchResult:
+      type: object
+      properties:
+        providerId:
+          type: integer
+          example: 5
+        providerName:
+          type: string
+          example: Riya Sharma
+        isVerified:
+          type: boolean
+          example: false
+        ratingAvg:
+          type: number
+          format: float
+          example: 4.5
+        latitude:
+          type: number
+          format: float
+          example: 13.0827
+        longitude:
+          type: number
+          format: float
+          example: 80.2707
+        listingId:
+          type: integer
+          example: 12
+        title:
+          type: string
+          example: Home electrical repair
+        price:
+          type: number
+          format: float
+          example: 499.00
+        categoryName:
+          type: string
+          example: Electrician
+        distanceKm:
+          type: number
+          format: float
+          example: 1.24
+    CategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/ServiceCategory"
+    ServiceCategory:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Electrician
+        slug:
+          type: string
+          example: electrician

@@ -5,6 +5,8 @@ DROP PROCEDURE IF EXISTS sp_verify_otp;
 DROP PROCEDURE IF EXISTS sp_save_refresh_token;
 DROP PROCEDURE IF EXISTS sp_get_refresh_token;
 DROP PROCEDURE IF EXISTS sp_revoke_refresh_token;
+DROP PROCEDURE IF EXISTS sp_search_nearby;
+DROP PROCEDURE IF EXISTS sp_get_categories;
 
 DELIMITER $$
 
@@ -189,6 +191,45 @@ BEGIN
     UPDATE refresh_tokens SET is_revoked = 1 WHERE id = v_id;
     SELECT 1 AS success, 'Logged out successfully' AS message;
   END IF;
+END$$
+
+CREATE PROCEDURE sp_search_nearby(
+  IN p_lat DECIMAL(10,8),
+  IN p_lng DECIMAL(11,8),
+  IN p_radius_km DECIMAL(6,2),
+  IN p_category_id INT UNSIGNED
+)
+BEGIN
+  SELECT
+      p.id            AS provider_id,
+      u.name          AS provider_name,
+      p.is_verified,
+      p.rating_avg,
+      p.latitude,
+      p.longitude,
+      l.id            AS listing_id,
+      l.title,
+      l.price,
+      c.name          AS category_name,
+      (6371 * ACOS(LEAST(1, GREATEST(-1,
+          COS(RADIANS(p_lat)) * COS(RADIANS(p.latitude)) *
+          COS(RADIANS(p.longitude) - RADIANS(p_lng)) +
+          SIN(RADIANS(p_lat)) * SIN(RADIANS(p.latitude))
+      )))) AS distance_km
+  FROM sih_providers p
+  JOIN sih_users u      ON u.id = p.user_id
+  JOIN sih_listings l   ON l.provider_id = p.id AND l.status = 'active'
+  JOIN sih_categories c ON c.id = l.category_id
+  WHERE p.latitude IS NOT NULL
+    AND p.longitude IS NOT NULL
+    AND (p_category_id IS NULL OR l.category_id = p_category_id)
+  HAVING distance_km <= p_radius_km
+  ORDER BY distance_km ASC;
+END$$
+
+CREATE PROCEDURE sp_get_categories()
+BEGIN
+  SELECT id, name, slug FROM sih_categories ORDER BY name;
 END$$
 
 DELIMITER ;

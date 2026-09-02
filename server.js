@@ -20,6 +20,7 @@ const { errorHandler, notFoundHandler } = require("./middleware/errorHandler");
 const app = express();
 const usersRoutes = require("./routes/users.routes");
 const providersRoutes = require("./routes/providers.routes");
+const searchRoutes = require("./routes/search.routes");
 
 app.use(cors());
 app.use(
@@ -60,6 +61,7 @@ app.use("/api-docs", ...swaggerUi.serve, swaggerSetup);
 app.use("/api/auth", authRoutes);
 app.use("/api/users", usersRoutes);
 app.use("/api/providers", providersRoutes);
+app.use("/api/search", searchRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
